@@ -14,8 +14,7 @@ def process(cwd, img_types=None):
     con, cur = setup_db()
     crawler = crawl(cwd, img_types)
     with Pool() as pool:
-        for result in pool.imap_unordered(generate_hash, crawler, 10):
-            fpath, hash_result = result
+        for fpath, hash_result in pool.imap_unordered(generate_hash, crawler, 10):
             if isinstance(hash_result, Exception):
                 yield False, fpath  # Log
             else:
