@@ -15,18 +15,21 @@ def process(cwd, img_types=None):
     crawler = crawl(cwd, img_types)
     with Pool() as pool:
         for result in pool.imap_unordered(generate_hash, crawler, 10):
-            fpath, img_hash = result
-            cur.execute(
-                'SELECT * FROM file_hashes WHERE hash = (?)', (img_hash,)
-            )
-            unique = False if cur.fetchone() else True
-            if unique:
+            fpath, hash_result = result
+            if isinstance(hash_result, Exception):
+                yield False, fpath  # Log
+            else:
                 cur.execute(
-                    'INSERT INTO file_hashes (fpath, hash) VALUES (?, ?)',
-                    (fpath, img_hash)
+                    'SELECT * FROM file_hashes WHERE hash = (?)', (hash_result,)
                 )
-                con.commit()
-            yield unique, fpath
+                unique = False if cur.fetchone() else True
+                if unique:
+                    cur.execute(
+                        'INSERT INTO file_hashes (fpath, hash) VALUES (?, ?)',
+                        (fpath, hash_result)
+                    )
+                    con.commit()
+                yield unique, fpath
 
 def crawl(cwd, img_types):
     """Iterator that yields the filepath of a file that is found
@@ -43,11 +46,15 @@ def generate_hash(fpath):
     Required:
         fpath (arg): A filepath or a PathLike object
     """
-    f_hash = hashlib.md5()
-    with open(fpath, 'rb') as f:
-        while chunk := f.read(8192):
-            f_hash.update(chunk)
-    return fpath, f_hash.digest()
+    try:
+        f_hash = hashlib.md5()
+        with open(fpath, 'rb') as f:
+            while chunk := f.read(8192):
+                f_hash.update(chunk)
+    except Exception as e:
+        return fpath, e
+    else:
+        return fpath, f_hash.digest()
 
 def setup_db():
     """Creates an in-memory SQLite DB.
