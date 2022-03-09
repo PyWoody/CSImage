@@ -46,18 +46,20 @@ class MainWindow(wx.Frame):
         self.image_carousel.close()
         self.image_carousel.join()
         self.show_results(cwd, processed, matches)
+        print('done')
 
     def spin_the_carousel(self):
         carousel = wx.Panel(self.process_panel)
-        image_handler = wx.Image()
         for result in self.image_carousel:
             unique, fpath = result
-            if image_handler.CanRead(fpath):
-                image = wx.Image(fpath, wx.BITMAP_TYPE_ANY)
+            image = wx.Image()
+            image.SetLoadFlags(0)
+            image.LoadFile(open(fpath, 'rb'))
+            if image.CanRead(fpath):
                 if image.IsOk():
                     print(fpath)
+            wx.StaticBitmap(carousel, -1, image.ConvertToBitmap(), (10, 5))
             continue
-            wx.StaticBitmap(carousel, -1, image, (10, 5))
             if unique:
                 pass
             else:
