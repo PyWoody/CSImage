@@ -1,6 +1,27 @@
-import hashlib, os, sqlite3
+import hashlib
+import os
+import sqlite3
 
 from multiprocessing import Pool
+from queue import Queue
+
+
+class ImageQueue(Queue):
+
+    SENTINEL = object()
+
+    def __iter__(self):
+        while True:
+            try:
+                task = self.get()
+                if task is self.SENTINEL:
+                    return
+                yield task
+            finally:
+                self.task_done()
+
+    def close(self):
+        self.put(self.SENTINEL)
 
 
 def process(cwd, img_types=None):
@@ -8,9 +29,7 @@ def process(cwd, img_types=None):
     was unique or not.
     """
     if img_types is None:
-        img_types = {
-            '.jpg', '.jpeg', '.tiff', '.gif', '.png', '.psd', '.eps', '.raw'
-        }
+        img_types = { '.jpg', '.jpeg', '.tiff', '.gif', '.png'}
     con, cur = setup_db()
     crawler = crawl(cwd, img_types)
     with Pool() as pool:
