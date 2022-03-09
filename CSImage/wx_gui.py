@@ -97,6 +97,8 @@ class MainWindow(wx.Frame):
         self.status_bar.SetStatusText(f'Processing {cwd}...', i=0)
         self.status_bar.SetStatusText(f'Total: {processed:,}', i=1)
         self.status_bar.SetStatusText(f'Matches: {matches:,}', i=2)
+        for unique, fpath in process(cwd):
+            print(unique, fpath)
 
 
 if __name__ == '__main__':
