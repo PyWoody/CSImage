@@ -51,6 +51,9 @@ class MainWindow(wx.Frame):
         self.image_carousel.join()
         self.show_results(cwd, processed, matches)
         print('done')
+        self.carousel_panel.Hide()
+        self.select_panel.Show()
+        self.Layout()
 
     def spin_the_carousel(self):
         static_bitmap = self.setup_carousel_panel()
@@ -62,10 +65,11 @@ class MainWindow(wx.Frame):
                 image.LoadFile(open(fpath, 'rb'))
                 if image.IsOk():
                     print(fpath)
+                    dimensions = self.carousel_panel.GetSize()
+                    if image.GetHeight() > dimensions.height:
+                        image.Rescale(dimensions.width, dimensions.height)
                     static_bitmap.SetBitmap(image.ConvertToBitmap())
                     self.Layout()
-                    wx.Yield()
-                    continue
                     if unique:
                         pass
                     else:
@@ -76,7 +80,7 @@ class MainWindow(wx.Frame):
             # self.carousel_panel.Destroy()
             self.carousel_panel = wx.Panel(self)
         static_bitmap = wx.StaticBitmap(self.carousel_panel)
-        static_bitmap.SetScaleMode(wx.StaticBitmap.ScaleMode.Scale_AspectFit)
+        # static_bitmap.SetScaleMode(wx.StaticBitmap.ScaleMode.Scale_AspectFit)
         sizer = wx.BoxSizer(wx.VERTICAL)
         # sizer.Add(static_bitmap, 1, wx.EXPAND | wx.CENTER)
         sizer.Add(static_bitmap, 1, wx.CENTER)
