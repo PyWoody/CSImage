@@ -60,13 +60,12 @@ class MainWindow(wx.Frame):
             unique, fpath = result
             image = wx.Image()
             if image.CanRead(fpath):
+                dimensions = self.carousel_panel.GetSize()
+                image.SetOption(wx.IMAGE_OPTION_MAX_HEIGHT, dimensions.height)
+                image.SetOption(wx.IMAGE_OPTION_MAX_WIDTH, dimensions.width)
                 image.SetLoadFlags(0)
                 image.LoadFile(open(fpath, 'rb'))
                 if image.IsOk():
-                    print(fpath)
-                    dimensions = self.carousel_panel.GetSize()
-                    if image.GetHeight() > dimensions.height:
-                        image.Rescale(dimensions.width, dimensions.height)
                     static_bitmap.SetBitmap(image.ConvertToBitmap())
                     self.Layout()
                     if unique:
