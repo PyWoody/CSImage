@@ -10,10 +10,17 @@ class MainWindow(wx.Frame):
 
     def __init__(self, parent):
         super().__init__(parent, size=(600, 325))
+        self.SetBackgroundColour('red')
         self.Show(True)
+        self.carousel_panel = None
         self.select_panel = None
-        self.process_panel = None
         self.setup_select_panel()
+        self.setup_carousel_panel()
+        self.carousel_panel.Hide()
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(self.carousel_panel, 1, wx.EXPAND)
+        sizer.Add(self.select_panel, 1, wx.EXPAND)
+        self.SetSizer(sizer)
         self.status_bar = self.CreateStatusBar()
         self.status_bar.PushStatusText('Select a starting point to begin...')
         self.image_carousel = ImageQueue()
@@ -23,9 +30,6 @@ class MainWindow(wx.Frame):
         # 1: Total Processed
         # 2: Matches found
         self.select_panel.Hide()
-        if self.process_panel is None:
-            self.process_panel = wx.Panel(self, wx.ID_ANY)
-        self.process_panel.Show()
         wx.Yield()
         processed, matches = 0, 0
         self.status_bar.SetFieldsCount(number=3, widths=(-1, 100, 100))  # check min width
@@ -49,21 +53,38 @@ class MainWindow(wx.Frame):
         print('done')
 
     def spin_the_carousel(self):
-        carousel = wx.Panel(self.process_panel)
+        static_bitmap = self.setup_carousel_panel()
         for result in self.image_carousel:
             unique, fpath = result
             image = wx.Image()
-            image.SetLoadFlags(0)
-            image.LoadFile(open(fpath, 'rb'))
             if image.CanRead(fpath):
+                image.SetLoadFlags(0)
+                image.LoadFile(open(fpath, 'rb'))
                 if image.IsOk():
                     print(fpath)
-            wx.StaticBitmap(carousel, -1, image.ConvertToBitmap(), (10, 5))
-            continue
-            if unique:
-                pass
-            else:
-                pass
+                    static_bitmap.SetBitmap(image.ConvertToBitmap())
+                    self.Layout()
+                    wx.Yield()
+                    continue
+                    if unique:
+                        pass
+                    else:
+                        pass
+
+    def setup_carousel_panel(self):
+        if self.carousel_panel is None:
+            # self.carousel_panel.Destroy()
+            self.carousel_panel = wx.Panel(self)
+        static_bitmap = wx.StaticBitmap(self.carousel_panel)
+        static_bitmap.SetScaleMode(wx.StaticBitmap.ScaleMode.Scale_AspectFit)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        # sizer.Add(static_bitmap, 1, wx.EXPAND | wx.CENTER)
+        sizer.Add(static_bitmap, 1, wx.CENTER)
+        self.carousel_panel.SetSizer(sizer)
+        self.carousel_panel.SetBackgroundColour('green')
+        self.carousel_panel.Show()
+        self.Layout()
+        return static_bitmap
 
     def setup_select_panel(self):
         if self.select_panel is None:
@@ -80,8 +101,8 @@ class MainWindow(wx.Frame):
             sizer.AddSpacer(25)
             sizer.Add(start_btn, 0,  wx.ALIGN_CENTER, 20)
             sizer.AddStretchSpacer(1)
-            sizer.SetSizeHints(self.select_panel)
             self.select_panel.SetSizer(sizer)
+            self.select_panel.SetBackgroundColour('yellow')
         self.select_panel.Show()
 
     def show_results(self, cwd, processed, matches):
