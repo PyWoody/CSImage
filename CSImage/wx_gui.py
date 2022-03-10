@@ -56,8 +56,6 @@ class MainWindow(wx.Frame):
 
     def spin_the_carousel(self):
         """Iterates over the self.image_carousel Queue to "spin" the carousel"""
-        # Maybe add a .01 sleep at the end of the iteration to prevent
-        # the carousel from spinning so quickly it looks like it's frozen
         static_bitmap = self.setup_carousel_panel()
         for result in self.image_carousel:
             is_match, fpath = result
@@ -71,10 +69,6 @@ class MainWindow(wx.Frame):
                 if image.IsOk():
                     static_bitmap.SetBitmap(image.ConvertToBitmap())
                     self.Layout()
-                    if is_match:
-                        pass
-                    else:
-                        pass
 
     def setup_carousel_panel(self):
         """Creates and promotes the self.carousel_panel if needed"""

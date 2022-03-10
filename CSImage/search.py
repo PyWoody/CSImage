@@ -60,6 +60,7 @@ def crawl(cwd, img_types):
 
 def generate_hash(fpath):
     """Returns a tuple of the filepath and an MD5 hash for the specified file
+    or an Exception
 
     Required:
         fpath (arg): A filepath or a PathLike object
