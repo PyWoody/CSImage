@@ -40,14 +40,14 @@ class MainWindow(wx.Frame):
         self.status_bar.SetStatusText(f'Matches: {matches:,}', i=2)
         carousel_thread = Thread(target=self.spin_the_carousel, daemon=True)
         wx.CallLater(500, carousel_thread.start)  # give hashing a head-start
-        for unique, fpath in process(cwd):
-            processed += 1
-            if unique:
+        for is_match, fpath in process(cwd):
+            if is_match:
                 matches += 1
                 self.status_bar.SetStatusText(f'Matches: {matches:,}', i=2)
+            processed += 1
             self.status_bar.SetStatusText(f'Processing {fpath}...', i=0)
             self.status_bar.SetStatusText(f'Total: {processed:,}', i=1)
-            self.image_carousel.put((unique, fpath))
+            self.image_carousel.put((is_match, fpath))
             wx.Yield()
         self.image_carousel.close()
         self.image_carousel.join()
@@ -60,7 +60,7 @@ class MainWindow(wx.Frame):
         # the carousel from spinning so quickly it looks like it's frozen
         static_bitmap = self.setup_carousel_panel()
         for result in self.image_carousel:
-            unique, fpath = result
+            is_match, fpath = result
             image = wx.Image()
             if image.CanRead(fpath):
                 dimensions = self.carousel_panel.GetSize()
@@ -71,7 +71,7 @@ class MainWindow(wx.Frame):
                 if image.IsOk():
                     static_bitmap.SetBitmap(image.ConvertToBitmap())
                     self.Layout()
-                    if unique:
+                    if is_match:
                         pass
                     else:
                         pass

@@ -38,16 +38,16 @@ def process(cwd, img_types=None):
                 yield False, fpath  # Log
             else:
                 cur.execute(
-                    'SELECT * FROM file_hashes WHERE hash = (?)', (hash_result,)
+                    'SELECT * FROM file_hashes WHERE hash = (?);', (hash_result,)
                 )
-                unique = True if cur.fetchone() else False
-                if unique:
+                exists = True if cur.fetchone() else False
+                if not exists:
                     cur.execute(
                         'INSERT INTO file_hashes (fpath, hash) VALUES (?, ?)',
                         (fpath, hash_result)
                     )
                     con.commit()
-                yield unique, fpath
+                yield exists, fpath
 
 def crawl(cwd, img_types):
     """Iterator that yields the filepath of a file that is found
