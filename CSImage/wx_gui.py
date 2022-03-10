@@ -13,12 +13,15 @@ class MainWindow(wx.Frame):
         self.SetBackgroundColour('red')
         self.Show(True)
         self.carousel_panel = None
+        self.results_panel = None
         self.select_panel = None
         self.setup_select_panel()
         self.setup_carousel_panel()
-        self.carousel_panel.Hide()
+        self.setup_results_panel()
+        self.swap_panels(self.select_panel)
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.carousel_panel, 1, wx.EXPAND)
+        sizer.Add(self.results_panel, 1, wx.EXPAND)
         sizer.Add(self.select_panel, 1, wx.EXPAND)
         self.SetSizer(sizer)
         self.status_bar = self.CreateStatusBar()
@@ -51,9 +54,6 @@ class MainWindow(wx.Frame):
         self.image_carousel.join()
         self.show_results(cwd, processed, matches)
         print('done')
-        self.carousel_panel.Hide()
-        self.select_panel.Show()
-        self.Layout()
 
     def spin_the_carousel(self):
         static_bitmap = self.setup_carousel_panel()
@@ -77,18 +77,20 @@ class MainWindow(wx.Frame):
 
     def setup_carousel_panel(self):
         if self.carousel_panel is None:
-            # self.carousel_panel.Destroy()
             self.carousel_panel = wx.Panel(self)
         static_bitmap = wx.StaticBitmap(self.carousel_panel)
-        # static_bitmap.SetScaleMode(wx.StaticBitmap.ScaleMode.Scale_AspectFit)
         sizer = wx.BoxSizer(wx.VERTICAL)
-        # sizer.Add(static_bitmap, 1, wx.EXPAND | wx.CENTER)
         sizer.Add(static_bitmap, 1, wx.CENTER)
         self.carousel_panel.SetSizer(sizer)
         self.carousel_panel.SetBackgroundColour('green')
         self.carousel_panel.Show()
         self.Layout()
         return static_bitmap
+
+    def setup_results_panel(self):
+        if self.results_panel is None:
+            self.results_panel = wx.Panel(self)
+        self.Layout()
 
     def setup_select_panel(self):
         if self.select_panel is None:
@@ -110,7 +112,35 @@ class MainWindow(wx.Frame):
         self.select_panel.Show()
 
     def show_results(self, cwd, processed, matches):
-        pass
+        self.swap_panels(self.results_panel)
+        cwd_text = wx.StaticText(self.results_panel, label=cwd)
+        processed_text = wx.StaticText(
+            self.results_panel,
+            label=f'Processed {processed:,} images'
+        )
+        matched_text = wx.StaticText(
+            self.results_panel,
+            label=f'Found {matches:,} matches'
+        )
+        restart_btn = wx.Button(self.results_panel, label='Restart?')
+        restart_btn.Bind(wx.EVT_BUTTON, self.restart, restart_btn)
+        exit_btn = wx.Button(self.results_panel, label='Exit')
+        exit_btn.Bind(wx.EVT_BUTTON, self.close, exit_btn)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.AddStretchSpacer(1)
+        sizer.Add(cwd_text, 0, wx.ALIGN_CENTER)
+        sizer.AddSpacer(25)
+        sizer.Add(processed_text, 0, wx.ALIGN_CENTER)
+        sizer.AddSpacer(25)
+        sizer.Add(matched_text, 0, wx.ALIGN_CENTER)
+        sizer.AddSpacer(25)
+        sizer.Add(restart_btn, 0, wx.ALIGN_CENTER)
+        sizer.AddSpacer(25)
+        sizer.Add(exit_btn, 0, wx.ALIGN_CENTER)
+        sizer.AddStretchSpacer(1)
+        self.results_panel.SetSizer(sizer)
+        self.results_panel.SetBackgroundColour('blue')
+        self.Layout()
 
     def get_cwd(self, *event_args, **event_kwargs):
         cwd_dialog = wx.DirDialog(
@@ -139,6 +169,25 @@ class MainWindow(wx.Frame):
         else:
             self.run(cwd)
             return
+
+    def close(self, *args, **kwargs):
+        self.Close()
+
+    def restart(self, *args, **kwargs):
+        for idx in range(self.status_bar.GetFieldsCount()):
+            self.status_bar.SetStatusText('', i=idx)
+        self.carousel_panel.DestroyChildren()
+        self.setup_carousel_panel()
+        self.swap_panels(self.select_panel)
+
+
+    def swap_panels(self, promote):
+        # TODO: Autmotically parse children for hide
+        for child in self.GetChildren():
+            if isinstance(child, wx.Panel) and child is not promote:
+                child.Hide()
+        promote.Show()
+        self.Layout()
 
 
 if __name__ == '__main__':
