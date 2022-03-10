@@ -18,24 +18,23 @@ class MainWindow(wx.Frame):
         self.setup_select_panel()
         self.setup_carousel_panel()
         self.setup_results_panel()
-        self.swap_panels(self.select_panel)
+        self.show_panel(self.select_panel)
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.carousel_panel, 1, wx.EXPAND)
         sizer.Add(self.results_panel, 1, wx.EXPAND)
         sizer.Add(self.select_panel, 1, wx.EXPAND)
         self.SetSizer(sizer)
         self.status_bar = self.CreateStatusBar()
-        self.status_bar.PushStatusText('Select a starting point to begin...')
         self.image_carousel = ImageQueue()
 
     def run(self, cwd):
-        # 0: Processing...{fname}
-        # 1: Total Processed
-        # 2: Matches found
-        self.select_panel.Hide()
-        wx.Yield()
+        """Initiates the processing of images and sets off the carousel
+
+        args (required):
+            cwd - The starting location where the images were processed
+        """
         processed, matches = 0, 0
-        self.status_bar.SetFieldsCount(number=3, widths=(-1, 100, 100))  # check min width
+        self.status_bar.SetFieldsCount(number=3, widths=(-1, 100, 100))
         self.status_bar.SetStatusText(f'Processing {cwd}...', i=0)
         self.status_bar.SetStatusText(f'Total: {processed:,}', i=1)
         self.status_bar.SetStatusText(f'Matches: {matches:,}', i=2)
@@ -48,14 +47,14 @@ class MainWindow(wx.Frame):
                 self.status_bar.SetStatusText(f'Matches: {matches:,}', i=2)
             self.status_bar.SetStatusText(f'Processing {fpath}...', i=0)
             self.status_bar.SetStatusText(f'Total: {processed:,}', i=1)
-            wx.Yield()
             self.image_carousel.put((unique, fpath))
+            wx.Yield()
         self.image_carousel.close()
         self.image_carousel.join()
         self.show_results(cwd, processed, matches)
-        print('done')
 
     def spin_the_carousel(self):
+        """Iterates over the self.image_carousel Queue to "spin" the carousel"""
         static_bitmap = self.setup_carousel_panel()
         for result in self.image_carousel:
             unique, fpath = result
@@ -76,6 +75,7 @@ class MainWindow(wx.Frame):
                         pass
 
     def setup_carousel_panel(self):
+        """Creates and promotes the self.carousel_panel if needed"""
         if self.carousel_panel is None:
             self.carousel_panel = wx.Panel(self)
         static_bitmap = wx.StaticBitmap(self.carousel_panel)
@@ -83,16 +83,17 @@ class MainWindow(wx.Frame):
         sizer.Add(static_bitmap, 1, wx.CENTER)
         self.carousel_panel.SetSizer(sizer)
         self.carousel_panel.SetBackgroundColour('green')
-        self.carousel_panel.Show()
-        self.Layout()
+        self.show_panel(self.carousel_panel)
         return static_bitmap
 
     def setup_results_panel(self):
+        """Creates and promotes the self.results_panel if needed"""
         if self.results_panel is None:
             self.results_panel = wx.Panel(self)
-        self.Layout()
+        self.show_panel(self.results_panel)
 
     def setup_select_panel(self):
+        """Creates and promotes the self.select_panel if needed"""
         if self.select_panel is None:
             self.select_panel = wx.Panel(self)
             label = wx.StaticText(
@@ -109,10 +110,17 @@ class MainWindow(wx.Frame):
             sizer.AddStretchSpacer(1)
             self.select_panel.SetSizer(sizer)
             self.select_panel.SetBackgroundColour('yellow')
-        self.select_panel.Show()
+        self.show_panel(self.select_panel)
 
     def show_results(self, cwd, processed, matches):
-        self.swap_panels(self.results_panel)
+        """Creates and shows the results panel.
+
+        args (required):
+            cwd - The starting location where the images were processed
+            processed - Number of files processed
+            matches - Nubmer of matches found
+        """
+        self.show_panel(self.results_panel)
         cwd_text = wx.StaticText(self.results_panel, label=cwd)
         processed_text = wx.StaticText(
             self.results_panel,
@@ -143,6 +151,7 @@ class MainWindow(wx.Frame):
         self.Layout()
 
     def get_cwd(self, *event_args, **event_kwargs):
+        """Initiates DirDialog for getting starting directory"""
         cwd_dialog = wx.DirDialog(
             None,
             'Choose staring location',
@@ -170,24 +179,26 @@ class MainWindow(wx.Frame):
             self.run(cwd)
             return
 
-    def close(self, *args, **kwargs):
-        self.Close()
-
-    def restart(self, *args, **kwargs):
+    def restart(self, *event_args, **event_kwargs):
+        """Re-initializes the program to its default, starting position"""
         for idx in range(self.status_bar.GetFieldsCount()):
             self.status_bar.SetStatusText('', i=idx)
+        self.results_panel.DestroyChildren()
         self.carousel_panel.DestroyChildren()
         self.setup_carousel_panel()
-        self.swap_panels(self.select_panel)
+        self.show_panel(self.select_panel)
 
 
-    def swap_panels(self, promote):
-        # TODO: Autmotically parse children for hide
+    def show_panel(self, panel):
+        """Shows the specified panel and hides all other wx.Panels"""
         for child in self.GetChildren():
-            if isinstance(child, wx.Panel) and child is not promote:
+            if isinstance(child, wx.Panel) and child is not panel:
                 child.Hide()
-        promote.Show()
+        panel.Show()
         self.Layout()
+
+    def close(self, *args, **kwargs):
+        self.Close()
 
 
 if __name__ == '__main__':
