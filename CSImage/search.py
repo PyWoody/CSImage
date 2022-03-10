@@ -40,7 +40,7 @@ def process(cwd, img_types=None):
                 cur.execute(
                     'SELECT * FROM file_hashes WHERE hash = (?)', (hash_result,)
                 )
-                unique = False if cur.fetchone() else True
+                unique = True if cur.fetchone() else False
                 if unique:
                     cur.execute(
                         'INSERT INTO file_hashes (fpath, hash) VALUES (?, ?)',
