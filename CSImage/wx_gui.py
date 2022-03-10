@@ -39,7 +39,7 @@ class MainWindow(wx.Frame):
         self.status_bar.SetStatusText(f'Total: {processed:,}', i=1)
         self.status_bar.SetStatusText(f'Matches: {matches:,}', i=2)
         carousel_thread = Thread(target=self.spin_the_carousel, daemon=True)
-        carousel_thread.start()
+        wx.CallLater(500, carousel_thread.start)  # give hashing a head-start
         for unique, fpath in process(cwd):
             processed += 1
             if unique:
@@ -51,10 +51,13 @@ class MainWindow(wx.Frame):
             wx.Yield()
         self.image_carousel.close()
         self.image_carousel.join()
+        carousel_thread.join()
         self.show_results(cwd, processed, matches)
 
     def spin_the_carousel(self):
         """Iterates over the self.image_carousel Queue to "spin" the carousel"""
+        # Maybe add a .01 sleep at the end of the iteration to prevent
+        # the carousel from spinning so quickly it looks like it's frozen
         static_bitmap = self.setup_carousel_panel()
         for result in self.image_carousel:
             unique, fpath = result
