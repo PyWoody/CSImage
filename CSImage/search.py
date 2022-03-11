@@ -48,6 +48,7 @@ def process(cwd, img_types=None):
                         (hash_result,)
                     )
                     con.commit()
+                exists = False
                 yield exists, fpath, mem
     con.close()
 
@@ -86,13 +87,7 @@ def setup_db():
     """
     con = sqlite3.connect(':memory:')
     cur = con.cursor()
-    cur.execute('''
-        CREATE TABLE file_hashes( 
-            fpath TEXT NOT NULL,
-            hash TEXT NOT NULL
-        );
-        '''
-    )
+    cur.execute('CREATE TABLE file_hashes(hash TEXT NOT NULL);')
     cur.execute('CREATE UNIQUE INDEX hash_index ON file_hashes(hash);')
     con.commit()
     return con, cur

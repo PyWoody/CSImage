@@ -39,7 +39,7 @@ class MainWindow(wx.Frame):
         """
         processed, matches = 0, 0
         self.status_bar.SetFieldsCount(number=3, widths=(-1, 100, 100))
-        self.status_bar.SetStatusText(f'Total: {processed:,}', i=1)
+        self.status_bar.SetStatusText(f'Processed: {processed:,}', i=1)
         self.status_bar.SetStatusText(f'Matches: {matches:,}', i=2)
         carousel_thread = Thread(target=self.spin_the_carousel, daemon=True)
         carousel_thread.start()
@@ -48,7 +48,7 @@ class MainWindow(wx.Frame):
                 matches += 1
                 self.status_bar.SetStatusText(f'Matches: {matches:,}', i=2)
             processed += 1
-            self.status_bar.SetStatusText(f'Total: {processed:,}', i=1)
+            self.status_bar.SetStatusText(f'Processed: {processed:,}', i=1)
             self.image_carousel.put((is_match, fpath, mem))
             wx.Yield()
         self.image_carousel.close()
@@ -58,34 +58,38 @@ class MainWindow(wx.Frame):
 
     def spin_the_carousel(self):
         """Iterates over the self.image_carousel Queue to "spin" the carousel"""
-        static_bitmap = self.setup_carousel_panel()
+        sizer = self.setup_carousel_panel()
         width, height = self.GetSize()
-        image = wx.Image()
         for result in self.image_carousel:
             is_match, fpath, mem = result
             if self.resized:
                 width, height = self.GetSize()
                 self.resized = False
+            image = wx.Image()
             image.SetLoadFlags(0)
             image.SetOption(wx.IMAGE_OPTION_MAX_WIDTH, width)
             image.SetOption(wx.IMAGE_OPTION_MAX_HEIGHT, height)
             if image.LoadFile(BytesIO(zlib.decompress(mem))):
+                sizer.Clear(True)
+                static_bitmap = wx.StaticBitmap(self.carousel_panel)
                 static_bitmap.SetBitmap(image.ConvertToBitmap())
+                sizer.Add(static_bitmap, 1, wx.CENTER)
                 if is_match:
                     pass
                 self.Layout()
 
     def setup_carousel_panel(self):
-        """Creates and promotes the self.carousel_panel if needed"""
+        """Creates and promotes the self.carousel_panel if needed
+
+        returns the carousel's sizer
+        """
         if self.carousel_panel is None:
             self.carousel_panel = wx.Panel(self)
-        static_bitmap = wx.StaticBitmap(self.carousel_panel)
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(static_bitmap, 1, wx.CENTER)
         self.carousel_panel.SetSizer(sizer)
         self.carousel_panel.SetBackgroundColour('green')
         self.show_panel(self.carousel_panel)
-        return static_bitmap
+        return sizer
 
     def setup_results_panel(self):
         """Creates and promotes the self.results_panel if needed"""
