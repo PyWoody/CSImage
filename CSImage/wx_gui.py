@@ -1,6 +1,8 @@
 import os
 import wx
+import zlib
 
+from io import BytesIO
 from threading import Thread
 
 from search import ImageQueue, process
@@ -10,6 +12,8 @@ class MainWindow(wx.Frame):
 
     def __init__(self, parent):
         super().__init__(parent, size=(600, 325))
+        self.resized = False
+        self.Bind(wx.EVT_SIZE, self.on_resize)
         self.SetBackgroundColour('red')
         self.Show(True)
         self.carousel_panel = None
@@ -35,19 +39,17 @@ class MainWindow(wx.Frame):
         """
         processed, matches = 0, 0
         self.status_bar.SetFieldsCount(number=3, widths=(-1, 100, 100))
-        self.status_bar.SetStatusText(f'Processing {cwd}...', i=0)
         self.status_bar.SetStatusText(f'Total: {processed:,}', i=1)
         self.status_bar.SetStatusText(f'Matches: {matches:,}', i=2)
         carousel_thread = Thread(target=self.spin_the_carousel, daemon=True)
-        wx.CallLater(500, carousel_thread.start)  # give hashing a head-start
-        for is_match, fpath in process(cwd):
+        carousel_thread.start()
+        for is_match, fpath, mem in process(cwd):
             if is_match:
                 matches += 1
                 self.status_bar.SetStatusText(f'Matches: {matches:,}', i=2)
             processed += 1
-            self.status_bar.SetStatusText(f'Processing {fpath}...', i=0)
             self.status_bar.SetStatusText(f'Total: {processed:,}', i=1)
-            self.image_carousel.put((is_match, fpath))
+            self.image_carousel.put((is_match, fpath, mem))
             wx.Yield()
         self.image_carousel.close()
         self.image_carousel.join()
@@ -57,18 +59,21 @@ class MainWindow(wx.Frame):
     def spin_the_carousel(self):
         """Iterates over the self.image_carousel Queue to "spin" the carousel"""
         static_bitmap = self.setup_carousel_panel()
+        width, height = self.GetSize()
+        image = wx.Image()
         for result in self.image_carousel:
-            is_match, fpath = result
-            image = wx.Image()
-            if image.CanRead(fpath):
-                dimensions = self.carousel_panel.GetSize()
-                image.SetOption(wx.IMAGE_OPTION_MAX_HEIGHT, dimensions.height)
-                image.SetOption(wx.IMAGE_OPTION_MAX_WIDTH, dimensions.width)
-                image.SetLoadFlags(0)
-                image.LoadFile(open(fpath, 'rb'))
-                if image.IsOk():
-                    static_bitmap.SetBitmap(image.ConvertToBitmap())
-                    self.Layout()
+            is_match, fpath, mem = result
+            if self.resized:
+                width, height = self.GetSize()
+                self.resized = False
+            image.SetLoadFlags(0)
+            image.SetOption(wx.IMAGE_OPTION_MAX_WIDTH, width)
+            image.SetOption(wx.IMAGE_OPTION_MAX_HEIGHT, height)
+            if image.LoadFile(BytesIO(zlib.decompress(mem))):
+                static_bitmap.SetBitmap(image.ConvertToBitmap())
+                if is_match:
+                    pass
+                self.Layout()
 
     def setup_carousel_panel(self):
         """Creates and promotes the self.carousel_panel if needed"""
@@ -192,6 +197,9 @@ class MainWindow(wx.Frame):
                 child.Hide()
         panel.Show()
         self.Layout()
+
+    def on_resize(self, *event_args, **event_kwargs):
+        self.resized = True
 
     def close(self, *args, **kwargs):
         self.Close()
