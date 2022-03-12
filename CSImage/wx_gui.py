@@ -150,10 +150,7 @@ class MainWindow(wx.Frame):
             matches - Numb of matches
         """
         self.show_panel(self.results_panel)
-        cwd_text = wx.StaticText(
-            self.results_panel,
-            label=f'Root: {cwd}'
-        )
+        cwd_text = wx.StaticText(self.results_panel, label=cwd)
         processed_text = wx.StaticText(
             self.results_panel,
             label=f'Processed {processed:,} images'
