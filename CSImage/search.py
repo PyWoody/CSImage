@@ -48,7 +48,6 @@ def process(cwd, img_types=None):
                         (hash_result,)
                     )
                     con.commit()
-                exists = False
                 yield exists, fpath, mem
     con.close()
 

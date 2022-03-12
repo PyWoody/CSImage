@@ -58,7 +58,14 @@ class MainWindow(wx.Frame):
 
     def spin_the_carousel(self):
         """Iterates over the self.image_carousel Queue to "spin" the carousel"""
-        sizer = self.setup_carousel_panel()
+        match_sizer, non_match_sizer  = self.setup_carousel_panel()
+        match_bitmap1 = wx.StaticBitmap(self.carousel_panel)
+        match_bitmap2 = wx.StaticBitmap(self.carousel_panel)
+        non_match_bitmap = wx.StaticBitmap(self.carousel_panel)
+        match_sizer.Add(match_bitmap1, 1, wx.EXPAND)
+        match_sizer.Add(match_bitmap2, 1, wx.EXPAND)
+        non_match_sizer.Add(non_match_bitmap, 1, wx.CENTER)
+        self.Layout()
         width, height = self.GetSize()
         for result in self.image_carousel:
             is_match, fpath, mem = result
@@ -67,29 +74,44 @@ class MainWindow(wx.Frame):
                 self.resized = False
             image = wx.Image()
             image.SetLoadFlags(0)
-            image.SetOption(wx.IMAGE_OPTION_MAX_WIDTH, width)
+            if is_match:
+                image.SetOption(wx.IMAGE_OPTION_MAX_WIDTH, (width // 2 ) - 5)
+            else:
+                image.SetOption(wx.IMAGE_OPTION_MAX_WIDTH, width)
             image.SetOption(wx.IMAGE_OPTION_MAX_HEIGHT, height)
             if image.LoadFile(BytesIO(zlib.decompress(mem))):
-                sizer.Clear(True)
-                static_bitmap = wx.StaticBitmap(self.carousel_panel)
-                static_bitmap.SetBitmap(image.ConvertToBitmap())
-                sizer.Add(static_bitmap, 1, wx.CENTER)
+                converted_image = image.ConvertToBitmap()
                 if is_match:
-                    pass
-                self.Layout()
+                    non_match_bitmap.Hide()
+                    match_bitmap1.SetBitmap(converted_image)
+                    match_bitmap1.Show()
+                    match_bitmap2.SetBitmap(converted_image)
+                    match_bitmap2.Show()
+                else:
+                    match_bitmap1.Hide()
+                    match_bitmap2.Hide()
+                    non_match_bitmap.SetBitmap(converted_image)
+                    non_match_bitmap.Show()
+                self.carousel_panel.Layout()
 
     def setup_carousel_panel(self):
         """Creates and promotes the self.carousel_panel if needed
 
-        returns the carousel's sizer
+        returns a tuple of bitmaps for matching, non-matching results
         """
         if self.carousel_panel is None:
             self.carousel_panel = wx.Panel(self)
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        self.carousel_panel.SetSizer(sizer)
+        else:
+            self.carousel_panel.DestroyChildren()
+        top_sizer = wx.BoxSizer(wx.VERTICAL)
+        match_sizer = wx.GridSizer(rows=1, cols=2, vgap=0, hgap=5)
+        non_match_sizer = wx.BoxSizer(wx.VERTICAL)
+        top_sizer.Add(match_sizer, 1, wx.CENTER)
+        top_sizer.Add(non_match_sizer, 1, wx.CENTER)
+        self.carousel_panel.SetSizer(top_sizer)
         self.carousel_panel.SetBackgroundColour('green')
         self.show_panel(self.carousel_panel)
-        return sizer
+        return match_sizer, non_match_sizer
 
     def setup_results_panel(self):
         """Creates and promotes the self.results_panel if needed"""
