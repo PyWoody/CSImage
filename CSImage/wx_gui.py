@@ -1,4 +1,5 @@
 import os
+import time
 import wx
 import zlib
 
@@ -87,12 +88,14 @@ class MainWindow(wx.Frame):
                     match_bitmap1.Show()
                     match_bitmap2.SetBitmap(converted_image)
                     match_bitmap2.Show()
+                    self.carousel_panel.Layout()
+                    time.sleep(.1)
                 else:
                     match_bitmap1.Hide()
                     match_bitmap2.Hide()
                     non_match_bitmap.SetBitmap(converted_image)
                     non_match_bitmap.Show()
-                self.carousel_panel.Layout()
+                    self.carousel_panel.Layout()
 
     def setup_carousel_panel(self):
         """Creates and promotes the self.carousel_panel if needed
