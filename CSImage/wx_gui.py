@@ -15,7 +15,6 @@ class MainWindow(wx.Frame):
         super().__init__(parent, size=(600, 325))
         self.resized = False
         self.Bind(wx.EVT_SIZE, self.on_resize)
-        self.SetBackgroundColour('red')
         self.Show(True)
         self.carousel_panel = None
         self.results_panel = None
@@ -40,8 +39,8 @@ class MainWindow(wx.Frame):
         """
         processed, matches = 0, 0
         self.status_bar.SetFieldsCount(number=3, widths=(-1, 100, 100))
-        self.status_bar.SetStatusText(f'Processed: {processed:,}', i=1)
-        self.status_bar.SetStatusText(f'Matches: {matches:,}', i=2)
+        self.status_bar.SetStatusText('Processed: 0', i=1)
+        self.status_bar.SetStatusText('Matches: 0', i=2)
         carousel_thread = Thread(target=self.spin_the_carousel, daemon=True)
         carousel_thread.start()
         for is_match, fpath, mem in process(cwd):
@@ -112,7 +111,6 @@ class MainWindow(wx.Frame):
         top_sizer.Add(match_sizer, 1, wx.CENTER)
         top_sizer.Add(non_match_sizer, 1, wx.CENTER)
         self.carousel_panel.SetSizer(top_sizer)
-        self.carousel_panel.SetBackgroundColour('green')
         self.show_panel(self.carousel_panel)
         return match_sizer, non_match_sizer
 
@@ -120,6 +118,8 @@ class MainWindow(wx.Frame):
         """Creates and promotes the self.results_panel if needed"""
         if self.results_panel is None:
             self.results_panel = wx.Panel(self)
+        else:
+            self.show_panel.DestroyChildren()
         self.show_panel(self.results_panel)
 
     def setup_select_panel(self):
@@ -139,7 +139,6 @@ class MainWindow(wx.Frame):
             sizer.Add(start_btn, 0,  wx.ALIGN_CENTER, 20)
             sizer.AddStretchSpacer(1)
             self.select_panel.SetSizer(sizer)
-            self.select_panel.SetBackgroundColour('yellow')
         self.show_panel(self.select_panel)
 
     def show_results(self, cwd, processed, matches):
@@ -148,10 +147,13 @@ class MainWindow(wx.Frame):
         args (required):
             cwd - The starting location where the images were processed
             processed - Number of files processed
-            matches - Nubmer of matches found
+            matches - Numb of matches
         """
         self.show_panel(self.results_panel)
-        cwd_text = wx.StaticText(self.results_panel, label=cwd)
+        cwd_text = wx.StaticText(
+            self.results_panel,
+            label=f'Starting from: {cwd}'
+        )
         processed_text = wx.StaticText(
             self.results_panel,
             label=f'Processed {processed:,} images'
@@ -160,24 +162,35 @@ class MainWindow(wx.Frame):
             self.results_panel,
             label=f'Found {matches:,} matches'
         )
-        restart_btn = wx.Button(self.results_panel, label='Restart?')
+        restart_btn = wx.Button(self.results_panel, label='Restart')
         restart_btn.Bind(wx.EVT_BUTTON, self.restart, restart_btn)
         exit_btn = wx.Button(self.results_panel, label='Exit')
         exit_btn.Bind(wx.EVT_BUTTON, self.close, exit_btn)
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.AddStretchSpacer(1)
-        sizer.Add(cwd_text, 0, wx.ALIGN_CENTER)
-        sizer.AddSpacer(25)
-        sizer.Add(processed_text, 0, wx.ALIGN_CENTER)
-        sizer.AddSpacer(25)
-        sizer.Add(matched_text, 0, wx.ALIGN_CENTER)
-        sizer.AddSpacer(25)
-        sizer.Add(restart_btn, 0, wx.ALIGN_CENTER)
-        sizer.AddSpacer(25)
-        sizer.Add(exit_btn, 0, wx.ALIGN_CENTER)
-        sizer.AddStretchSpacer(1)
-        self.results_panel.SetSizer(sizer)
-        self.results_panel.SetBackgroundColour('blue')
+
+        top_sizer = wx.BoxSizer(wx.VERTICAL)
+
+        text_sizer = wx.BoxSizer(wx.VERTICAL)
+        text_sizer.Add(cwd_text, 0)
+        text_sizer.AddSpacer(25)
+        text_sizer.Add(processed_text, 0)
+        text_sizer.AddSpacer(25)
+        text_sizer.Add(matched_text, 0)
+        text_sizer.AddSpacer(25)
+        text_sizer.AddStretchSpacer(1)
+
+        btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        btn_sizer.AddStretchSpacer(1)
+        btn_sizer.Add(restart_btn, 0, wx.ALIGN_CENTER)
+        btn_sizer.AddSpacer(5)
+        btn_sizer.Add(exit_btn, 0, wx.ALIGN_CENTER)
+
+        top_sizer.AddSpacer(25)
+        top_sizer.Add(text_sizer, 1, wx.CENTER)
+        top_sizer.AddSpacer(25)
+        top_sizer.Add(btn_sizer, 1, wx.CENTER)
+        top_sizer.AddSpacer(25)
+
+        self.results_panel.SetSizer(top_sizer)
         self.Layout()
 
     def get_cwd(self, *event_args, **event_kwargs):
@@ -229,6 +242,7 @@ class MainWindow(wx.Frame):
 
     def on_resize(self, *event_args, **event_kwargs):
         self.resized = True
+        self.Layout()
 
     def close(self, *args, **kwargs):
         self.Close()
