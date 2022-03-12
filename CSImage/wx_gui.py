@@ -152,7 +152,7 @@ class MainWindow(wx.Frame):
         self.show_panel(self.results_panel)
         cwd_text = wx.StaticText(
             self.results_panel,
-            label=f'Starting from: {cwd}'
+            label=f'Root: {cwd}'
         )
         processed_text = wx.StaticText(
             self.results_panel,
@@ -175,20 +175,17 @@ class MainWindow(wx.Frame):
         text_sizer.Add(processed_text, 0)
         text_sizer.AddSpacer(25)
         text_sizer.Add(matched_text, 0)
-        text_sizer.AddSpacer(25)
-        text_sizer.AddStretchSpacer(1)
 
         btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        btn_sizer.AddStretchSpacer(1)
         btn_sizer.Add(restart_btn, 0, wx.ALIGN_CENTER)
         btn_sizer.AddSpacer(5)
         btn_sizer.Add(exit_btn, 0, wx.ALIGN_CENTER)
 
         top_sizer.AddSpacer(25)
         top_sizer.Add(text_sizer, 1, wx.CENTER)
-        top_sizer.AddSpacer(25)
+        top_sizer.AddStretchSpacer(1)
         top_sizer.Add(btn_sizer, 1, wx.CENTER)
-        top_sizer.AddSpacer(25)
+        top_sizer.AddSpacer(5)
 
         self.results_panel.SetSizer(top_sizer)
         self.Layout()
