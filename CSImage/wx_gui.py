@@ -38,7 +38,7 @@ class MainWindow(wx.Frame):
             cwd - The starting location where the images were processed
         """
         processed, matches = 0, 0
-        self.status_bar.SetFieldsCount(number=3, widths=(-1, 100, 100))
+        self.status_bar.SetFieldsCount(number=3, widths=(-3, -1, -1))
         self.status_bar.SetStatusText('Processed: 0', i=1)
         self.status_bar.SetStatusText('Matches: 0', i=2)
         carousel_thread = Thread(target=self.spin_the_carousel, daemon=True)
@@ -62,8 +62,15 @@ class MainWindow(wx.Frame):
         match_bitmap1 = wx.StaticBitmap(self.carousel_panel)
         match_bitmap2 = wx.StaticBitmap(self.carousel_panel)
         non_match_bitmap = wx.StaticBitmap(self.carousel_panel)
-        match_sizer.Add(match_bitmap1, 1, wx.EXPAND)
-        match_sizer.Add(match_bitmap2, 1, wx.EXPAND)
+        match_msg = wx.StaticText(self.carousel_panel, label='Match!')
+        match_img_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        match_img_sizer.Add(match_bitmap1, 1, wx.EXPAND)
+        match_img_sizer.AddSpacer(5)
+        match_img_sizer.Add(match_bitmap2, 1, wx.EXPAND)
+        match_sizer.Add(match_img_sizer, 0, wx.ALIGN_CENTER)
+        match_sizer.Add(match_msg, 0, wx.ALIGN_CENTER)
+        match_sizer.AddSpacer(25)
+        match_sizer.AddGrowableRow(0, proportion=1)
         non_match_sizer.Add(non_match_bitmap, 1, wx.CENTER)
         self.Layout()
         width, height = self.GetSize()
@@ -87,26 +94,30 @@ class MainWindow(wx.Frame):
                     match_bitmap1.Show()
                     match_bitmap2.SetBitmap(converted_image)
                     match_bitmap2.Show()
+                    match_msg.Show()
                     self.carousel_panel.Layout()
-                    time.sleep(.1)
+                    time.sleep(.5)
                 else:
                     match_bitmap1.Hide()
                     match_bitmap2.Hide()
+                    match_msg.Hide()
                     non_match_bitmap.SetBitmap(converted_image)
                     non_match_bitmap.Show()
                     self.carousel_panel.Layout()
 
     def setup_carousel_panel(self):
-        """Creates and promotes the self.carousel_panel if needed
+        """Creates and promotes the self.carousel_panel if needed,
+        destroys the existing Panel's children.
 
-        returns a tuple of bitmaps for matching, non-matching results
+        returns a tuple of sizers for matching, non-matching results
         """
         if self.carousel_panel is None:
             self.carousel_panel = wx.Panel(self)
         else:
             self.carousel_panel.DestroyChildren()
         top_sizer = wx.BoxSizer(wx.VERTICAL)
-        match_sizer = wx.GridSizer(rows=1, cols=2, vgap=0, hgap=5)
+        match_sizer = wx.FlexGridSizer(rows=5, cols=1, vgap=0, hgap=0)
+        match_sizer.AddStretchSpacer(1)
         non_match_sizer = wx.BoxSizer(wx.VERTICAL)
         top_sizer.Add(match_sizer, 1, wx.CENTER)
         top_sizer.Add(non_match_sizer, 1, wx.CENTER)
@@ -115,7 +126,9 @@ class MainWindow(wx.Frame):
         return match_sizer, non_match_sizer
 
     def setup_results_panel(self):
-        """Creates and promotes the self.results_panel if needed"""
+        """Creates and promotes the self.results_panel if needed,
+         else destroys Panel's children
+        """
         if self.results_panel is None:
             self.results_panel = wx.Panel(self)
         else:
@@ -123,7 +136,9 @@ class MainWindow(wx.Frame):
         self.show_panel(self.results_panel)
 
     def setup_select_panel(self):
-        """Creates and promotes the self.select_panel if needed"""
+        """Creates and promotes the self.select_panel if needed,
+         else destroys Panel's children
+        """
         if self.select_panel is None:
             self.select_panel = wx.Panel(self)
             label = wx.StaticText(
@@ -147,7 +162,7 @@ class MainWindow(wx.Frame):
         args (required):
             cwd - The starting location where the images were processed
             processed - Number of files processed
-            matches - Numb of matches
+            matches - Number of matches
         """
         self.show_panel(self.results_panel)
         cwd_text = wx.StaticText(self.results_panel, label=cwd)
