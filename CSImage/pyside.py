@@ -25,32 +25,35 @@ class MainWindow(QMainWindow):
         self.carousel_widget = None
         self.results_widget = None
         self.select_widget = None
-        self.main_window = QStackedWidget(self)
+        self.image = QLabel()
+        self.main_widget = QStackedWidget()
+        self.setCentralWidget(self.main_widget)
+        self.setAutoFillBackground(True)
+        p = self.palette()
+        p.setColor(self.backgroundRole(), QtCore.Qt.red)
+        self.setPalette(p)
         self.status_bar = self.statusBar()
         self.status_msg = QLabel(f'Processed: {0} | Matches: {0}')
         self.status_bar.addPermanentWidget(self.status_msg)
         self.setup_select_widget()
-        self.setup_carousel_widget()
+        self.match_widget, self.non_match_widget = self.setup_carousel_widget()
         self.setup_results_widget()
-        self.main_window.addWidget(self.select_widget)
-        self.main_window.addWidget(self.carousel_widget)
-        self.main_window.addWidget(self.results_widget)
-        self.main_window.setCurrentWidget(self.select_widget)
+        self.main_widget.addWidget(self.select_widget)
+        self.main_widget.addWidget(self.carousel_widget)
+        self.main_widget.addWidget(self.results_widget)
         layout = QVBoxLayout()
-        layout.addWidget(self.main_window)
-        self.setLayout(layout)
-        self.main_window.show()
+        layout.addWidget(self.main_widget)
+        self.main_widget.setLayout(layout)
+        self.setCentralWidget(self.main_widget)
         self.image_carousel = ImageQueue()
 
     def run(self, cwd):
-        self.main_window.setCurrentWidget(self.carousel_widget)
+        self.main_widget.setCurrentWidget(self.carousel_widget)
         processed, matches = 0, 0
         self.update_progress_status(processed=processed, matches=matches)
-        img_label = QLabel(self.main_window)
-        carousel_thread = Thread(target=self.spin_the_carousel, args=(img_label,), daemon=True)
+        carousel_thread = Thread(target=self.spin_the_carousel, daemon=True)
         carousel_thread.start()
         for is_match, fpath, mem in process(cwd):
-            print(fpath)
             if is_match:
                 matches += 1
             processed += 1
@@ -60,37 +63,59 @@ class MainWindow(QMainWindow):
         self.image_carousel.join()
         carousel_thread.join()
         # self.show_results(cwd, processed, matches)
+        print('here')
 
-    def spin_the_carousel(self, img_label):
+    def spin_the_carousel(self):
         for result in self.image_carousel:
             is_match, fpath, mem = result
-            # image = QImage.loadFromData(QtCore.QByteArray(mem))
             image = QImage()
+            # TODO: Sizing, etc.
             if image.loadFromData(zlib.decompress(mem)):
-                img_label.setPixmap(QPixmap.fromImage(image))
-                # print(fpath)
-                # time.sleep(10)
+                if is_match:
+                    self.non_match_widget.setVisible(False)
+                    self.match_widget.setVisible(True)
+                    print(fpath)
+                    # time.sleep(10)
+                else:
+                    self.match_widget.setVisible(False)
+                    self.non_match_widget.setVisible(True)
+                self.image.setPixmap(QPixmap.fromImage(image))
 
     def setup_select_widget(self):
+        self.select_widget = QWidget()
+        self.select_widget.setAutoFillBackground(True)
+        p = self.palette()
+        p.setColor(self.backgroundRole(), QtCore.Qt.green)
+        self.select_widget.setPalette(p)
         label = QLabel('Choose a starting path below')
         select_btn = QPushButton('Select')
         select_btn.clicked.connect(self.get_cwd)
         layout = QVBoxLayout()
         layout.addWidget(label)
         layout.addWidget(select_btn)
-        self.select_widget = QWidget()
         self.select_widget.setLayout(layout)
 
     def setup_carousel_widget(self):
         match_text = QLabel('Match!')
-        # image1, image2 = '', ''
-        image1, image2 = QLabel('image1'), QLabel('image2')
-        layout = QGridLayout()
-        layout.addWidget(image1, 0, 0)
-        layout.addWidget(image2, 0, 1)
-        layout.addWidget(match_text, 1, 0, 0, -1)
+        match_widget = QWidget()
+        match_layout = QGridLayout()
+        match_layout.addWidget(self.image, 0, 0)
+        match_layout.addWidget(self.image, 0, 1)
+        match_layout.addWidget(match_text, 1, 0, 1, 2)
+        match_widget.setLayout(match_layout)
+
+        non_match_widget = QWidget()
+        non_match_layout = QVBoxLayout()
+        non_match_layout.addWidget(self.image)
+        non_match_widget.setLayout(non_match_layout)
+
+        layout = QVBoxLayout()
+        layout.addWidget(match_widget)
+        layout.addWidget(non_match_widget)
+
         self.carousel_widget = QWidget()
         self.carousel_widget.setLayout(layout)
+        return match_widget, non_match_widget
 
     def setup_results_widget(self):
         if self.results_widget is None:
@@ -109,7 +134,8 @@ class MainWindow(QMainWindow):
                     # error_dialog.exe theses
                     return self.get_cwd()
                 else:
-                    self.run(cwd)
+                    t = Thread(target=self.run, args=(cwd,))
+                    t.start()
                     return
         else:
             error_dialog = QErrorMessage(self)
