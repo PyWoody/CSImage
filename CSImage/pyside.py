@@ -15,7 +15,7 @@ from PySide6.QtWidgets import QApplication, \
                               QStackedWidget, \
                               QVBoxLayout, \
                               QWidget
-from search import ImageQueue, process
+from search import process
 
 
 class MainWindow(QMainWindow):
@@ -32,9 +32,6 @@ class MainWindow(QMainWindow):
         self.main_widget = QStackedWidget()
         self.setCentralWidget(self.main_widget)
         self.setAutoFillBackground(True)
-        p = self.palette()
-        p.setColor(self.backgroundRole(), QtCore.Qt.red)
-        self.setPalette(p)
         self.status_bar = self.statusBar()
         self.status_msg = QLabel('')
         self.status_bar.addPermanentWidget(self.status_msg)
@@ -48,7 +45,6 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.main_widget)
         self.main_widget.setLayout(layout)
         self.setCentralWidget(self.main_widget)
-        self.image_carousel = ImageQueue()
 
     def run(self, cwd):
         self.main_widget.setCurrentWidget(self.carousel_widget)
@@ -62,11 +58,8 @@ class MainWindow(QMainWindow):
             self.update_progress_status(processed=processed, matches=matches)
             QApplication.processEvents()
             if is_match:
-                time.sleep(.5)
+                time.sleep(.25)
         self.show_results(cwd, processed, matches)
-
-    def why(self):
-        print('whyyyyy')
 
     def spin_the_carousel(self, is_match, fpath, mem):
         image = QImage()
@@ -87,7 +80,6 @@ class MainWindow(QMainWindow):
                 self.match_widget.setVisible(True)
                 self.match_image1.setPixmap(pixmap)
                 self.match_image2.setPixmap(pixmap)
-                print(fpath)
             else:
                 self.match_widget.setVisible(False)
                 self.non_match_widget.setVisible(True)
@@ -123,15 +115,14 @@ class MainWindow(QMainWindow):
     def setup_select_widget(self):
         self.select_widget = QWidget()
         self.select_widget.setAutoFillBackground(True)
-        p = self.palette()
-        p.setColor(self.backgroundRole(), QtCore.Qt.green)
-        self.select_widget.setPalette(p)
         label = QLabel('Choose a starting path below')
         select_btn = QPushButton('Select')
         select_btn.clicked.connect(self.get_cwd)
-        layout = QVBoxLayout()
+        layout = QGridLayout()
+        layout.setAlignment(QtCore.Qt.AlignCenter)
+        layout.setVerticalSpacing(25)
         layout.addWidget(label)
-        layout.addWidget(select_btn)
+        layout.addWidget(select_btn, 1, 0, QtCore.Qt.AlignCenter)
         self.select_widget.setLayout(layout)
 
     def setup_carousel_widget(self):
@@ -140,7 +131,7 @@ class MainWindow(QMainWindow):
         match_layout.setAlignment(QtCore.Qt.AlignCenter)
         match_layout.addWidget(self.match_image1, 0, 0)
         match_layout.addWidget(self.match_image2, 0, 1)
-        match_layout.addWidget(QLabel('Match!'), 1, 0)
+        match_layout.addWidget(QLabel('Match!'), 1, 0, 1, 2, QtCore.Qt.AlignCenter)
         match_widget.setLayout(match_layout)
 
         non_match_widget = QWidget()
@@ -174,11 +165,6 @@ class MainWindow(QMainWindow):
                     # error_dialog.exe theses
                     return self.get_cwd()
                 else:
-                    '''
-                    worker = CarouselThread(self.run, cwd)
-                    worker.signals.finished.connect(self.show_results)
-                    self.threadpool.start(worker)
-                    '''
                     self.run(cwd)
                     return
         else:
@@ -201,30 +187,6 @@ class MainWindow(QMainWindow):
 
     def update_progress_status(self, *, processed, matches):
         self.status_msg.setText(f'Processed: {processed} | Matches: {matches}')
-
-
-class WorkerSignals(QtCore.QObject):
-
-    finished = QtCore.Signal(tuple)
-
-
-class CarouselThread(QtCore.QRunnable):
-
-    def __init__(self, fn, *args, **kwargs):
-        super().__init__()
-        self.fn, self.args, self.kwargs = fn, args, kwargs
-        self.signals = WorkerSignals()
-
-    @QtCore.Slot()
-    def run(self):
-        # TODO: Error handeling here and above
-        try:
-            result = self.fn(*self.args, **self.kwargs)
-        except Exception as e:
-            print(e)
-        finally:
-            return self.signals.finished.emit(result)
-
 
 
 if __name__ == '__main__':
