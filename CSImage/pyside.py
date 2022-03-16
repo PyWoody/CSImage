@@ -62,13 +62,15 @@ class MainWindow(QMainWindow):
         self.show_results(cwd, processed, matches)
 
     def spin_the_carousel(self, is_match, fpath, mem):
+        border_size = 50
         image = QImage()
         if image.loadFromData(zlib.decompress(mem)):
-            widget_width = self.carousel_widget.width()
+            width, height = image.width(), image.height()
+            widget_width = self.carousel_widget.width() - border_size
+            widget_height = self.carousel_widget.height() - border_size
             if is_match:
                 widget_width = widget_width // 2
-            widget_height = self.carousel_widget.height()
-            width, height = image.width(), image.height()
+                widget_height = widget_height // 2
             if height > widget_height or width > widget_width:
                 image = image.scaled(
                         widget_width, widget_height,
@@ -131,7 +133,9 @@ class MainWindow(QMainWindow):
         match_layout.setAlignment(QtCore.Qt.AlignCenter)
         match_layout.addWidget(self.match_image1, 0, 0)
         match_layout.addWidget(self.match_image2, 0, 1)
-        match_layout.addWidget(QLabel('Match!'), 1, 0, 1, 2, QtCore.Qt.AlignCenter)
+        match_layout.addWidget(
+            QLabel('Match!'), 1, 0, 1, 2, QtCore.Qt.AlignCenter
+        )
         match_widget.setLayout(match_layout)
 
         non_match_widget = QWidget()
