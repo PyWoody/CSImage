@@ -1,5 +1,4 @@
 import os
-import sys
 import time
 import zlib
 
@@ -8,19 +7,16 @@ from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import QApplication, \
                               QErrorMessage, \
                               QFileDialog, \
+                              QHBoxLayout, \
                               QGridLayout, \
                               QLabel, \
                               QMainWindow, \
-                              QPlainTextEdit, \
                               QPushButton, \
                               QStackedWidget, \
-                              QHBoxLayout, \
                               QVBoxLayout, \
                               QWidget
 from search import ImageQueue, process
-from threading import Thread
 
-# TODO: Re-evaluate wheter threading would be worth it in Qt
 
 class MainWindow(QMainWindow):
 
@@ -31,7 +27,8 @@ class MainWindow(QMainWindow):
         self.carousel_widget = None
         self.results_widget = None
         self.select_widget = None
-        self.image = QLabel()
+        self.match_image1, self.match_image2 = QLabel(), QLabel()
+        self.non_match_image = QLabel()
         self.main_widget = QStackedWidget()
         self.setCentralWidget(self.main_widget)
         self.setAutoFillBackground(True)
@@ -64,7 +61,12 @@ class MainWindow(QMainWindow):
             self.spin_the_carousel(is_match, fpath, mem)
             self.update_progress_status(processed=processed, matches=matches)
             QApplication.processEvents()
+            if is_match:
+                time.sleep(.5)
         self.show_results(cwd, processed, matches)
+
+    def why(self):
+        print('whyyyyy')
 
     def spin_the_carousel(self, is_match, fpath, mem):
         image = QImage()
@@ -76,17 +78,20 @@ class MainWindow(QMainWindow):
             width, height = image.width(), image.height()
             if height > widget_height or width > widget_width:
                 image = image.scaled(
-                        QtCore.QSize(widget_width, widget_height),
+                        widget_width, widget_height,
                         aspectMode=QtCore.Qt.KeepAspectRatio
                     )
+            pixmap = QPixmap.fromImage(image)
             if is_match:
                 self.non_match_widget.setVisible(False)
                 self.match_widget.setVisible(True)
+                self.match_image1.setPixmap(pixmap)
+                self.match_image2.setPixmap(pixmap)
                 print(fpath)
             else:
                 self.match_widget.setVisible(False)
                 self.non_match_widget.setVisible(True)
-            self.image.setPixmap(QPixmap.fromImage(image))
+                self.non_match_image.setPixmap(pixmap)
 
     def show_results(self, cwd, processed, matches):
         self.clear_progress_status()
@@ -130,20 +135,21 @@ class MainWindow(QMainWindow):
         self.select_widget.setLayout(layout)
 
     def setup_carousel_widget(self):
-        match_text = QLabel('Match!')
         match_widget = QWidget()
         match_layout = QGridLayout()
-        match_layout.addWidget(self.image, 0, 0)
-        match_layout.addWidget(self.image, 0, 1)
-        match_layout.addWidget(match_text, 1, 0, 1, 2)
+        match_layout.setAlignment(QtCore.Qt.AlignCenter)
+        match_layout.addWidget(self.match_image1, 0, 0)
+        match_layout.addWidget(self.match_image2, 0, 1)
+        match_layout.addWidget(QLabel('Match!'), 1, 0)
         match_widget.setLayout(match_layout)
 
         non_match_widget = QWidget()
         non_match_layout = QVBoxLayout()
-        non_match_layout.addWidget(self.image)
+        non_match_layout.addWidget(self.non_match_image)
         non_match_widget.setLayout(non_match_layout)
 
         layout = QVBoxLayout()
+        layout.setAlignment(QtCore.Qt.AlignCenter)
         layout.addWidget(match_widget)
         layout.addWidget(non_match_widget)
 
@@ -223,7 +229,6 @@ class CarouselThread(QtCore.QRunnable):
 
 if __name__ == '__main__':
     import sys
-    from PySide6.QtWidgets import QApplication
 
     app = QApplication(sys.argv)
     window = MainWindow()
