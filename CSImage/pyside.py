@@ -47,21 +47,32 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.main_widget)
 
     def run(self, cwd):
+        """Initiates the processing of images and sets off the carousel
+
+        args (required):
+            cwd - The starting location where the images were processed
+        """
         self.main_widget.setCurrentWidget(self.carousel_widget)
         processed, matches = 0, 0
         self.update_progress_status(processed=processed, matches=matches)
-        for is_match, fpath, mem in process(cwd):
+        for is_match, _, mem in process(cwd):
             if is_match:
                 matches += 1
             processed += 1
-            self.spin_the_carousel(is_match, fpath, mem)
+            self.spin_the_carousel(is_match, mem)
             self.update_progress_status(processed=processed, matches=matches)
             QApplication.processEvents()
             if is_match:
                 time.sleep(.25)
         self.show_results(cwd, processed, matches)
 
-    def spin_the_carousel(self, is_match, fpath, mem):
+    def spin_the_carousel(self, is_match, mem):
+        """Spins the carousel to add the necessary images.
+
+        args (required)
+            is_match - boolean for if the image is a match
+            mem - A zlib compressed binary object for the image
+        """
         border_size = 50
         image = QImage()
         if image.loadFromData(zlib.decompress(mem)):
@@ -88,6 +99,13 @@ class MainWindow(QMainWindow):
                 self.non_match_image.setPixmap(pixmap)
 
     def show_results(self, cwd, processed, matches):
+        """Shows the results in the results widget.
+
+        args (required):
+            cwd - The starting location where the images were processed
+            processed - Number of files processed
+            matches - Number of matches
+        """
         self.clear_progress_status()
         restart_btn = QPushButton('Restart')
         restart_btn.clicked.connect(self.restart)
@@ -115,6 +133,7 @@ class MainWindow(QMainWindow):
         self.main_widget.setCurrentWidget(self.results_widget)
 
     def setup_select_widget(self):
+        """Creates the select widget"""
         self.select_widget = QWidget()
         self.select_widget.setAutoFillBackground(True)
         label = QLabel('Choose a starting path below')
@@ -128,6 +147,10 @@ class MainWindow(QMainWindow):
         self.select_widget.setLayout(layout)
 
     def setup_carousel_widget(self):
+        """Creates the carousel widget
+
+        returns a tuple of layout widgets
+        """
         match_widget = QWidget()
         match_layout = QGridLayout()
         match_layout.setAlignment(QtCore.Qt.AlignCenter)
@@ -153,11 +176,16 @@ class MainWindow(QMainWindow):
         return match_widget, non_match_widget
 
     def setup_results_widget(self):
+        """Creates the results widget if needed""" 
         if self.results_widget is None:
             self.results_widget = QWidget()
 
     @QtCore.Slot()
     def get_cwd(self):
+        """Initiates QFileDialog for getting starting directory
+
+        If a valid directory is selected, `self.run` is started
+        """
         cwd_dialog = QFileDialog(self)
         cwd_dialog.setFileMode(QFileDialog.Directory)
         if cwd_dialog.exec():
@@ -179,6 +207,7 @@ class MainWindow(QMainWindow):
 
     @QtCore.Slot()
     def restart(self):
+        """Returns the program to the default state"""
         self.clear_progress_status()
         self.main_widget.setCurrentWidget(self.select_widget)
 
