@@ -63,12 +63,12 @@ def generate_table(*, img=None, processed=None, matches=None, is_match=None):
     return Align(table, align='center', vertical='middle')
 
 def generate_results_table(*, cwd, processed, matches):
-    table = Table(show_header=False, show_footer=False, expand=True)
+    table = Table(show_header=False, show_footer=False)
     table.add_column()
     table.add_row(Align.center(cwd))
     table.add_row(Align.center(f'Processed: {processed:,}'))
     table.add_row(Align.center(f'Matches: {matches:,}'))
-    return table
+    return Align(table, align='center', vertical='middle')
 
 
 def convert(mem, term_width, term_height):
