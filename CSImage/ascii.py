@@ -5,6 +5,7 @@ import zlib
 from io import BytesIO
 from PIL import Image
 from rich.align import Align
+from rich.layout import Layout
 from rich.live import Live
 from rich.table import Table
 
@@ -13,7 +14,7 @@ from search import process
 
 def main(cwd):
     processed, matches = 0, 0
-    with Live(generate_table(), refresh_per_second=4, screen=True) as live:
+    with Live(generate_table(), auto_refresh=False, screen=True) as live:
         for is_match, fpath, mem in process(cwd):
             height, width = shutil.get_terminal_size()
             height -= 50
@@ -31,8 +32,16 @@ def main(cwd):
                         is_match=is_match
                     )
                 )
+                live.refresh()
                 if is_match:
-                    time.sleep(.2)
+                    time.sleep(.5)
+        live.update(
+            generate_results_table(
+                cwd=cwd, processed=processed, matches=matches
+            )
+        )
+        live.refresh()
+        live.update(input())
 
 def generate_table(*, img=None, processed=None, matches=None, is_match=None):
     if img is None:
@@ -42,15 +51,25 @@ def generate_table(*, img=None, processed=None, matches=None, is_match=None):
         match_table.add_column()
         match_table.add_column()
         match_table.add_row(img, img)
+        match_table.add_row(Align.center('Match!'), Align.center('Match!'))
     else:
         match_table.add_column()
         match_table.add_row(img)
-    status = f'Processed: {processed} | Matches: {matches}    '
+    status = f'Processed: {processed:,} | Matches: {matches:,}    '
     table = Table(show_header=False, show_footer=False, expand=True)
     table.add_column()
     table.add_row(Align.center(match_table))
     table.add_row(Align.right(status))
+    return Align(table, align='center', vertical='middle')
+
+def generate_results_table(*, cwd, processed, matches):
+    table = Table(show_header=False, show_footer=False, expand=True)
+    table.add_column()
+    table.add_row(Align.center(cwd))
+    table.add_row(Align.center(f'Processed: {processed:,}'))
+    table.add_row(Align.center(f'Matches: {matches:,}'))
     return table
+
 
 def convert(mem, term_width, term_height):
     img = Image.open(BytesIO(zlib.decompress(mem))).convert('L')  # Greyscale
