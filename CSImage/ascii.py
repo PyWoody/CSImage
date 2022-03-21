@@ -5,7 +5,6 @@ import zlib
 from io import BytesIO
 from PIL import Image
 from rich.align import Align
-from rich.layout import Layout
 from rich.live import Live
 from rich.table import Table
 
@@ -34,7 +33,7 @@ def main(cwd):
                 )
                 live.refresh()
                 if is_match:
-                    time.sleep(.5)
+                    time.sleep(.25)
         live.update(
             generate_results_table(
                 cwd=cwd, processed=processed, matches=matches
