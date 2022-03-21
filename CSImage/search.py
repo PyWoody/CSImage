@@ -28,6 +28,9 @@ class ImageQueue(Queue):
 def process(cwd, img_types=None):
     """Iterator that yields a tuple of (bool, filpath) if the image found
     was unique or not.
+
+    Optional:
+        img_types (arg/kwarg): Array object containting exention types to use
     """
     if img_types is None:
         img_types = { '.jpg', '.jpeg', '.tiff', '.gif', '.png'}
@@ -54,6 +57,9 @@ def process(cwd, img_types=None):
 def crawl(cwd, img_types):
     """Iterator that yields the filepath of a file that is found
     in img_types
+
+    Required:
+        img_types (arg): Array object containting exention types to use
     """
     for root, dirs, files in os.walk(cwd):
         for f in files:
