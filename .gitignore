@@ -159,5 +159,6 @@ dmypy.json
 .pyre/
 
 # etc.
+compressed/
 *.mp4
 *.mov
