@@ -1,7 +1,7 @@
 # CSImage
 Duplicate image search in the style of bad CSI'esqu programs. Enhance...Enhance.
 
-Reproduced below are a set of demonstration videos while using the same test data throught. If there is a match, the two images will be placed side-by-side with a brief pause. If there is no match, the single image will be displayed before quickly moving on to the next iamge in the queue.
+Reproduced below are a set of demonstration videos while using the same test data throught. If there is a match, the two images will be placed side-by-side with a brief pause. If there is no match, the single image will be displayed before quickly moving on to the next image in the queue.
 
 
 ## `wxPython`
