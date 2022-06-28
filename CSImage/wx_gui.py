@@ -57,8 +57,10 @@ class MainWindow(wx.Frame):
         self.show_results(cwd, processed, matches)
 
     def spin_the_carousel(self):
-        """Iterates over the self.image_carousel Queue to "spin" the carousel"""
-        match_sizer, non_match_sizer  = self.setup_carousel_panel()
+        """
+        Iterates over the self.image_carousel Queue to "spin" the carousel
+        """
+        match_sizer, non_match_sizer = self.setup_carousel_panel()
         match_bitmap1 = wx.StaticBitmap(self.carousel_panel)
         match_bitmap2 = wx.StaticBitmap(self.carousel_panel)
         non_match_bitmap = wx.StaticBitmap(self.carousel_panel)
@@ -82,7 +84,7 @@ class MainWindow(wx.Frame):
             image = wx.Image()
             image.SetLoadFlags(0)
             if is_match:
-                image.SetOption(wx.IMAGE_OPTION_MAX_WIDTH, (width // 2 ) - 5)
+                image.SetOption(wx.IMAGE_OPTION_MAX_WIDTH, (width // 2) - 5)
             else:
                 image.SetOption(wx.IMAGE_OPTION_MAX_WIDTH, width)
             image.SetOption(wx.IMAGE_OPTION_MAX_HEIGHT, height)
@@ -239,7 +241,6 @@ class MainWindow(wx.Frame):
         self.carousel_panel.DestroyChildren()
         self.setup_carousel_panel()
         self.show_panel(self.select_panel)
-
 
     def show_panel(self, panel):
         """Shows the specified panel and hides all other wx.Panels"""

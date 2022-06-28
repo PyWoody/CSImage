@@ -33,16 +33,18 @@ def process(cwd, img_types=None):
         img_types (arg/kwarg): Array object containting exention types to use
     """
     if img_types is None:
-        img_types = { '.jpg', '.jpeg', '.tiff', '.gif', '.png'}
+        img_types = {'.jpg', '.jpeg', '.tiff', '.gif', '.png'}
     con, cur = setup_db()
     crawler = crawl(cwd, img_types)
+    pool_args = (generate_hash, crawler, 10)
     with Pool() as pool:
-        for fpath, hash_result, mem in pool.imap_unordered(generate_hash, crawler, 10):
+        for fpath, hash_result, mem in pool.imap_unordered(*pool_args):
             if isinstance(hash_result, Exception):
                 yield False, fpath, zlib.compress(b'')  # Log
             else:
                 cur.execute(
-                    'SELECT * FROM file_hashes WHERE hash = (?);', (hash_result,)
+                    'SELECT * FROM file_hashes WHERE hash = (?);',
+                    (hash_result,)
                 )
                 exists = True if cur.fetchone() else False
                 if not exists:
@@ -53,6 +55,7 @@ def process(cwd, img_types=None):
                     con.commit()
                 yield exists, fpath, mem
     con.close()
+
 
 def crawl(cwd, img_types):
     """Iterator that yields the filepath of a file that is found
@@ -65,6 +68,7 @@ def crawl(cwd, img_types):
         for f in files:
             if os.path.splitext(f)[1].lower() in img_types:
                 yield os.path.join(root, f)
+
 
 def generate_hash(fpath):
     """Returns a tuple of the filepath and an MD5 hash for the specified file
@@ -85,6 +89,7 @@ def generate_hash(fpath):
     else:
         return fpath, f_hash.digest(), zlib.compress(mem_bytes, level=9)
 
+
 def setup_db():
     """Creates an in-memory SQLite DB.
 
@@ -96,4 +101,3 @@ def setup_db():
     cur.execute('CREATE UNIQUE INDEX hash_index ON file_hashes(hash);')
     con.commit()
     return con, cur
-
