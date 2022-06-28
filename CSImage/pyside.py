@@ -176,7 +176,7 @@ class MainWindow(QMainWindow):
         return match_widget, non_match_widget
 
     def setup_results_widget(self):
-        """Creates the results widget if needed""" 
+        """Creates the results widget if needed"""
         if self.results_widget is None:
             self.results_widget = QWidget()
 
@@ -193,7 +193,9 @@ class MainWindow(QMainWindow):
                 cwd = cwd[0]
                 if not os.path.isdir(cwd):
                     error_dialog = QErrorMessage(self)
-                    error_dialog.showMessage('You must select a location to continue.')
+                    error_dialog.showMessage(
+                        'You must select a location to continue.'
+                    )
                     # error_dialog.exe theses
                     return self.get_cwd()
                 else:

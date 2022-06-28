@@ -160,5 +160,4 @@ dmypy.json
 
 # etc.
 compressed/
-*.mp4
 *.mov

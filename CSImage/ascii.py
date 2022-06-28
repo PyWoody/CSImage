@@ -42,6 +42,7 @@ def main(cwd):
         live.refresh()
         live.update(input())
 
+
 def generate_table(*, img=None, processed=None, matches=None, is_match=None):
     if img is None:
         return
@@ -60,6 +61,7 @@ def generate_table(*, img=None, processed=None, matches=None, is_match=None):
     table.add_row(Align.center(match_table))
     table.add_row(Align.right(status))
     return Align(table, align='center', vertical='middle')
+
 
 def generate_results_table(*, cwd, processed, matches):
     table = Table(show_header=False, show_footer=False)
